@@ -180,15 +180,16 @@ class BaseAgent:
                 confidence = "MEDIUM"
                 
             return f"""
-            Based on the available data, I can provide a basic analysis.
+            Basic analysis provided in fallback mode (Ollama offline).
+            Signals are mixed; proceed with caution due to limited context.
             
-            The technical indicators show mixed signals, with some potential for growth but also some risk factors.
+            **RECOMMENDATION: {recommendation}**
+            **CONFIDENCE: {confidence}**
             
-            Without access to the full AI capabilities (Ollama is offline), I'm providing a simplified analysis.
-            
-            RECOMMENDATION: {recommendation} (Confidence: {confidence})
-            
-            Note: For more detailed analysis, please ensure Ollama is running and the deepseek-coder:1.5b model is available.
+            Reasoning:
+            - Limited data availability in fallback mode
+            - Mixed technical context and uncertain momentum
+            - Await full analysis for stronger conviction
             """
             
         elif self.name == "VisualizationAgent":

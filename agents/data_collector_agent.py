@@ -16,9 +16,16 @@ class DataCollectorAgent(BaseAgent):
     def __init__(self):
         super().__init__(name="DataCollectorAgent")
         self.system_prompt = """
-        You are a financial data collection agent. Your task is to collect comprehensive 
-        stock market data for analysis. Extract all relevant information including price history,
-        company fundamentals, and recent news. Be thorough and comprehensive, ensuring data quality.
+        You are a senior financial data acquisition specialist.
+        Your job is to reliably gather complete, clean, and well-structured stock data
+        suitable for downstream analysis and visualization.
+        
+        Collection principles:
+        - Prioritize data completeness and correctness
+        - Capture provenance/source and timestamps
+        - Normalize fields and ensure consistent schemas
+        - Surface gaps or anomalies explicitly
+        - Keep responses concise and structured
         """
     
     def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -63,13 +70,21 @@ class DataCollectorAgent(BaseAgent):
             
             # Use Ollama to add insights about the data collection process
             prompt = f"""
-            I've collected the following data for stock {symbol} over {TIME_PERIODS[period]}:
-            - Historical price data with {len(historical_data['data'])} data points
-            - {len(news)} recent news articles
-            - Fundamental data including balance sheet, income statement, and cash flow
+            # Data Collection Summary for {symbol}
             
-            Provide a brief explanation of what this data represents and how complete it is.
-            Keep your response under 150 words.
+            Period: {TIME_PERIODS[period]}
+            Historical points: {len(historical_data['data'])}
+            News articles: {len(news)}
+            Fundamentals: balance sheet, income statement, cash flow
+            Source: {historical_data.get('source', 'unknown')}
+            
+            Provide a concise assessment including:
+            - Coverage completeness and any notable gaps
+            - Data quality or anomalies worth flagging
+            - Suitability for technical and fundamental analysis
+            - Any recommended next data to collect (if gaps exist)
+            
+            Keep under 120 words.
             """
             
             data_insights = self._call_ollama(prompt, self.system_prompt)

@@ -15,10 +15,15 @@ class VisualizationAgent(BaseAgent):
     def __init__(self):
         super().__init__(name="VisualizationAgent")
         self.system_prompt = """
-        You are a data visualization agent specialized in financial charts. 
-        Your task is to create clear, informative, and visually appealing charts 
-        that effectively communicate stock performance and analysis results.
-        Focus on highlighting key patterns and insights that support the analysis.
+        You are a financial data visualization specialist.
+        Your goal is to translate market data and analysis into clear, accurate,
+        and decision-focused visuals that emphasize key insights.
+        
+        Visualization principles:
+        - Prioritize clarity, accuracy, and signal over decoration
+        - Highlight trends, levels, and notable events
+        - Keep narrative concise and aligned with the recommendation
+        - Call out uncertainty or missing context when relevant
         """
     
     def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -105,14 +110,20 @@ class VisualizationAgent(BaseAgent):
             
             # Get visualization insights from Ollama
             prompt = f"""
-            I've created a stock chart for {symbol} ({company_info.get('longName', symbol)}) over {period}.
-            The chart shows the price history and volume, along with any available technical indicators.
+            # Visualization Narrative for {symbol} ({company_info.get('longName', symbol)})
+            Period: {period}
+            Recommendation: {recommendation}
+            Confidence: {confidence}
+            Indicators shown: price, volume, MA20/MA50 if available
             
-            The analysis resulted in a {recommendation} recommendation with {confidence} confidence.
+            Provide a concise narrative that includes:
+            - Primary trend and notable shifts
+            - Key support/resistance levels visible on the chart
+            - How MA20/MA50 relate to current price (crossover/spacing)
+            - Any volume confirmations/divergences
+            - One line tying visuals to the {recommendation} call
             
-            Provide a brief description of what key patterns or insights should be highlighted in this visualization.
-            Explain what a viewer should focus on when looking at this chart and how it supports the {recommendation} recommendation.
-            Keep your response under 150 words.
+            Keep under 120 words.
             """
             
             viz_insights = self._call_ollama(prompt, self.system_prompt)
