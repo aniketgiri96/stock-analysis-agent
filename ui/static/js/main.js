@@ -1,9 +1,42 @@
 /**
- * Main JavaScript file for Chain of Agents stock analysis system
+ * Modern Stock Analysis UI - Enhanced JavaScript
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // DOM elements
+    // === THEME TOGGLE ===
+    const themeToggle = document.getElementById('themeToggle');
+    const htmlElement = document.documentElement;
+    
+    // Load saved theme or default to light
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    htmlElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+    
+    themeToggle.addEventListener('click', function() {
+        const currentTheme = htmlElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        htmlElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+        
+        // Add transition effect
+        htmlElement.style.transition = 'background-color 0.3s, color 0.3s';
+        setTimeout(() => {
+            htmlElement.style.transition = '';
+        }, 300);
+    });
+    
+    function updateThemeIcon(theme) {
+        const icon = themeToggle.querySelector('i');
+        if (theme === 'dark') {
+            icon.className = 'bi bi-sun-fill';
+        } else {
+            icon.className = 'bi bi-moon-stars-fill';
+        }
+    }
+    
+    // === DOM ELEMENTS ===
     const stockForm = document.getElementById('stockForm');
     const stockSymbolInput = document.getElementById('stockSymbol');
     const timePeriodSelect = document.getElementById('timePeriod');
@@ -26,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const insightsCard = document.getElementById('insightsCard');
     const insightsContent = document.getElementById('insightsContent');
     
-    // Form submission
+    // === FORM SUBMISSION ===
     stockForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
@@ -34,7 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const period = timePeriodSelect.value;
         
         if (!symbol) {
-            alert('Please enter a stock symbol');
+            showNotification('Please enter a stock symbol', 'warning');
+            stockSymbolInput.focus();
             return;
         }
         
@@ -42,10 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
         resetUI();
         
         // Show loading state
-        analyzeBtn.disabled = true;
-        analyzeBtn.textContent = 'Analyzing...';
-        loadingChart.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="ms-3 mb-0">Fetching data for ' + symbol + '...</p></div>';
-        loadingChart.style.display = 'block';
+        setButtonLoading(true);
+        updateLoadingState(symbol);
         
         // Set the first agent to Processing immediately
         updateAgentStatus(agent1Status, 'Processing', 50);
@@ -54,46 +86,142 @@ document.addEventListener('DOMContentLoaded', function() {
         fetchStockAnalysis(symbol, period);
     });
     
-    // Reset UI elements
+    // === UI HELPERS ===
+    function setButtonLoading(loading) {
+        if (loading) {
+            analyzeBtn.disabled = true;
+            analyzeBtn.classList.add('loading');
+            analyzeBtn.querySelector('.btn-content span').textContent = 'Analyzing...';
+        } else {
+            analyzeBtn.disabled = false;
+            analyzeBtn.classList.remove('loading');
+            analyzeBtn.querySelector('.btn-content span').textContent = 'Analyze Stock';
+        }
+    }
+    
+    function updateLoadingState(symbol) {
+        loadingChart.innerHTML = `
+            <div class="loading-content">
+                <div class="loading-icon">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <p class="loading-text">Analyzing ${symbol}...</p>
+            </div>
+        `;
+        loadingChart.style.display = 'flex';
+        stockChart.style.display = 'none';
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Simple notification (can be enhanced with a toast library)
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: ${type === 'warning' ? '#f59e0b' : '#6366f1'};
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    // === RESET UI ===
     function resetUI() {
         // Reset agent statuses
         updateAgentStatus(agent1Status, 'Idle', 0);
         updateAgentStatus(agent2Status, 'Idle', 0);
         updateAgentStatus(agent3Status, 'Idle', 0);
         
-        // Hide results cards
-        recommendationCard.style.display = 'none';
-        analysisCard.style.display = 'none';
-        insightsCard.style.display = 'none';
+        // Hide results cards with animation
+        hideCard(recommendationCard);
+        hideCard(analysisCard);
+        hideCard(insightsCard);
         
         // Reset chart
         stockChart.style.display = 'none';
-        loadingChart.style.display = 'block';
         chartTitle.textContent = 'Stock Chart';
     }
     
-    // Update agent status in UI
-    function updateAgentStatus(agentElement, status, progress) {
-        const statusLabel = agentElement.querySelector('.status-label');
-        const progressBar = agentElement.querySelector('.progress-bar');
-        
-        statusLabel.textContent = status;
-        progressBar.style.width = progress + '%';
-        
-        // Update status color
-        statusLabel.className = 'status-label';
-        if (status === 'Running') {
-            statusLabel.classList.add('status-running');
-        } else if (status === 'Processing') {
-            statusLabel.classList.add('status-processing');
-        } else if (status === 'Completed') {
-            statusLabel.classList.add('status-completed');
-        } else if (status === 'Error') {
-            statusLabel.classList.add('status-error');
+    function hideCard(card) {
+        if (card.style.display !== 'none') {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.style.display = 'none';
+            }, 300);
         }
     }
     
-    // Fetch stock analysis from API
+    function showCard(card) {
+        card.style.display = 'block';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        // Trigger reflow
+        card.offsetHeight;
+        
+        requestAnimationFrame(() => {
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        });
+    }
+    
+    // === UPDATE AGENT STATUS ===
+    function updateAgentStatus(agentElement, status, progress) {
+        const statusLabel = agentElement.querySelector('.status-label');
+        const progressBar = agentElement.querySelector('.progress-bar-modern');
+        const statusDot = agentElement.querySelector('.status-dot');
+        
+        if (!statusLabel || !progressBar) return;
+        
+        // Update status text
+        statusLabel.textContent = status;
+        
+        // Update progress bar
+        progressBar.style.width = progress + '%';
+        
+        // Update data attribute for styling
+        agentElement.setAttribute('data-status', status.toLowerCase());
+        
+        // Add active class if processing or completed
+        if (status === 'Processing' || status === 'Running') {
+            agentElement.classList.add('active');
+            // Activate connector if it exists
+            const connector = agentElement.querySelector('.agent-connector');
+            if (connector) {
+                connector.classList.add('active');
+            }
+        } else if (status === 'Completed') {
+            agentElement.classList.add('active');
+        } else {
+            agentElement.classList.remove('active');
+            const connector = agentElement.querySelector('.agent-connector');
+            if (connector) {
+                connector.classList.remove('active');
+            }
+        }
+        
+        // Animate progress bar
+        if (progress > 0) {
+            progressBar.style.transition = 'width 0.5s ease';
+        }
+    }
+    
+    // === FETCH STOCK ANALYSIS ===
     function fetchStockAnalysis(symbol, period) {
         // Start a polling mechanism to show realistic agent states during processing
         const startPolling = new Date().getTime();
@@ -103,16 +231,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // After 3 seconds, show Analysis Agent as processing if Data Collector still shows processing
             if (elapsedSeconds > 3 && 
-                agent1Status.querySelector('.status-label').textContent === 'Processing' && 
-                agent2Status.querySelector('.status-label').textContent === 'Idle') {
+                agent1Status.getAttribute('data-status') === 'processing' && 
+                agent2Status.getAttribute('data-status') === 'idle') {
                 updateAgentStatus(agent1Status, 'Completed', 100);
                 updateAgentStatus(agent2Status, 'Processing', 50);
             }
             
             // After 6 seconds, show Visualization Agent as processing if Analysis Agent still shows processing
             if (elapsedSeconds > 6 && 
-                agent2Status.querySelector('.status-label').textContent === 'Processing' && 
-                agent3Status.querySelector('.status-label').textContent === 'Idle') {
+                agent2Status.getAttribute('data-status') === 'processing' && 
+                agent3Status.getAttribute('data-status') === 'idle') {
                 updateAgentStatus(agent2Status, 'Completed', 100);
                 updateAgentStatus(agent3Status, 'Processing', 50);
             }
@@ -138,17 +266,16 @@ document.addEventListener('DOMContentLoaded', function() {
             clearInterval(pollingInterval);
             
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
         .then(data => {
             // Enable button
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = 'Analyze Stock';
+            setButtonLoading(false);
             
             if (!data.success) {
-                throw new Error(data.error || 'Unknown error');
+                throw new Error(data.error || 'Unknown error occurred');
             }
             
             // Update pipeline status
@@ -159,26 +286,41 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            analyzeBtn.disabled = false;
-            analyzeBtn.textContent = 'Analyze Stock';
-            loadingChart.innerHTML = '<div class="alert alert-danger m-3" role="alert">' + error.message + '</div>';
+            setButtonLoading(false);
+            
+            // Reset all agents to idle on error
+            updateAgentStatus(agent1Status, 'Error', 0);
+            updateAgentStatus(agent2Status, 'Idle', 0);
+            updateAgentStatus(agent3Status, 'Idle', 0);
+            
+            loadingChart.innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-icon" style="color: #ef4444;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <p class="loading-text" style="color: #ef4444;">Error: ${error.message}</p>
+                </div>
+            `;
+            
+            showNotification(error.message || 'An error occurred while analyzing the stock', 'warning');
         });
     }
     
-    // Update the pipeline status from API response
+    // === UPDATE PIPELINE STATUS ===
     function updatePipelineStatus(pipelineStatus) {
         if (!pipelineStatus) return;
         
         // Update data collection status
         if (pipelineStatus.data_collection) {
             const status = pipelineStatus.data_collection.status;
-            let displayStatus = status.charAt(0).toUpperCase() + status.slice(1); // Capitalize
+            let displayStatus = status.charAt(0).toUpperCase() + status.slice(1);
             let progress = 0;
             
             if (status === 'completed') {
                 progress = 100;
+                displayStatus = 'Completed';
             } else if (status === 'running') {
-                displayStatus = 'Processing'; // Show as "Processing" instead of "Running"
+                displayStatus = 'Processing';
                 progress = 50;
             }
             
@@ -193,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (status === 'completed') {
                 progress = 100;
+                displayStatus = 'Completed';
             } else if (status === 'running') {
                 displayStatus = 'Processing';
                 progress = 50;
@@ -209,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (status === 'completed') {
                 progress = 100;
+                displayStatus = 'Completed';
             } else if (status === 'running') {
                 displayStatus = 'Processing';
                 progress = 50;
@@ -218,32 +362,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Display results in UI
+    // === DISPLAY RESULTS ===
     function displayResults(data) {
         // Update chart title
-        chartTitle.textContent = `${data.symbol} - ${data.period_description}`;
+        chartTitle.textContent = `${data.symbol} - ${data.period_description || 'Stock Chart'}`;
         
-        // Show recommendation
-        recommendationCard.style.display = 'block';
+        // Show recommendation with animation
+        showCard(recommendationCard);
         recommendationContent.innerHTML = createRecommendationHTML(data.recommendation, data.confidence);
         
         // Show analysis if available
         if (data.analysis) {
-            analysisCard.style.display = 'block';
+            showCard(analysisCard);
             analysisContent.innerHTML = formatAnalysisText(data.analysis);
         }
         
         // Show visualization insights if available
         if (data.visualization_insights) {
-            insightsCard.style.display = 'block';
+            showCard(insightsCard);
             insightsContent.innerHTML = '<p>' + data.visualization_insights + '</p>';
         }
         
-        // Create chart with chart configuration
+        // Create chart
         createStockChart(data.chart_config);
     }
     
-    // Create HTML for recommendation display
+    // === CREATE RECOMMENDATION HTML ===
     function createRecommendationHTML(recommendation, confidence) {
         let recommendationClass = '';
         if (recommendation === 'BUY') {
@@ -271,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
     }
     
-    // Format analysis text for display
+    // === FORMAT ANALYSIS TEXT ===
     function formatAnalysisText(analysisText) {
         // Split the text by newlines and wrap in <p> tags
         const paragraphs = analysisText.split('\n\n');
@@ -289,20 +433,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
     
-    // Create stock chart with Plotly
+    // === CREATE STOCK CHART ===
     function createStockChart(chartConfig) {
         if (!chartConfig || !chartConfig.data) {
-            loadingChart.innerHTML = '<div class="alert alert-warning" role="alert">No chart data available</div>';
+            loadingChart.innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-icon" style="color: #f59e0b;">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                    </div>
+                    <p class="loading-text" style="color: #f59e0b;">No chart data available</p>
+                </div>
+            `;
             return;
         }
         
-        // Hide loading, show chart
+        // Hide loading, show chart with animation
         loadingChart.style.display = 'none';
         stockChart.style.display = 'block';
+        stockChart.style.opacity = '0';
+        
+        requestAnimationFrame(() => {
+            stockChart.style.transition = 'opacity 0.5s ease';
+            stockChart.style.opacity = '1';
+        });
         
         const dates = chartConfig.data.dates;
         const prices = chartConfig.data.prices;
         const volumes = chartConfig.data.volumes;
+        
+        // Get theme colors
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const textColor = isDark ? '#f1f5f9' : '#0f172a';
+        const gridColor = isDark ? '#334155' : '#e2e8f0';
+        const bgColor = isDark ? '#1e293b' : '#ffffff';
         
         // Price trace
         const priceTrace = {
@@ -312,9 +475,12 @@ document.addEventListener('DOMContentLoaded', function() {
             mode: 'lines',
             name: 'Price',
             line: {
-                color: '#2c3e50',
-                width: 2
-            }
+                color: '#6366f1',
+                width: 2.5,
+                shape: 'spline'
+            },
+            fill: 'tonexty',
+            fillcolor: 'rgba(99, 102, 241, 0.1)'
         };
         
         // Create array of traces
@@ -329,8 +495,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 mode: 'lines',
                 name: '20-Day MA',
                 line: {
-                    color: '#3498db',
-                    width: 1.5
+                    color: '#3b82f6',
+                    width: 1.5,
+                    dash: 'dash'
                 }
             });
         }
@@ -343,8 +510,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 mode: 'lines',
                 name: '50-Day MA',
                 line: {
-                    color: '#e74c3c',
-                    width: 1.5
+                    color: '#f59e0b',
+                    width: 1.5,
+                    dash: 'dash'
                 }
             });
         }
@@ -356,101 +524,171 @@ document.addEventListener('DOMContentLoaded', function() {
             type: 'bar',
             name: 'Volume',
             marker: {
-                color: '#34495e',
-                opacity: 0.4
+                color: isDark ? '#475569' : '#cbd5e1',
+                opacity: 0.6
             },
             yaxis: 'y2'
         };
         
         traces.push(volumeTrace);
         
+        // Recommendation color
+        const recommendationColor = chartConfig.recommendation === 'BUY' ? '#10b981' : 
+                                   (chartConfig.recommendation === 'SELL' ? '#ef4444' : '#f59e0b');
+        
         // Create layout
         const layout = {
             title: {
-                text: chartConfig.symbol + ' ' + chartConfig.period,
+                text: chartConfig.symbol + ' ' + (chartConfig.period || ''),
                 font: {
-                    size: 16
-                }
+                    size: 18,
+                    color: textColor,
+                    family: 'Inter, sans-serif'
+                },
+                x: 0.5,
+                xanchor: 'center'
+            },
+            paper_bgcolor: bgColor,
+            plot_bgcolor: bgColor,
+            font: {
+                family: 'Inter, sans-serif',
+                color: textColor,
+                size: 12
             },
             xaxis: {
-                title: 'Date',
+                title: {
+                    text: 'Date',
+                    font: { size: 14, color: textColor }
+                },
+                gridcolor: gridColor,
+                linecolor: gridColor,
                 rangeslider: {
                     visible: true,
-                    thickness: 0.05
+                    thickness: 0.05,
+                    bgcolor: isDark ? '#334155' : '#f8fafc'
                 }
             },
             yaxis: {
-                title: 'Price',
+                title: {
+                    text: 'Price (USD)',
+                    font: { size: 14, color: textColor }
+                },
                 side: 'left',
-                showgrid: true,
-                zeroline: true
+                gridcolor: gridColor,
+                linecolor: gridColor,
+                zeroline: false
             },
             yaxis2: {
-                title: 'Volume',
+                title: {
+                    text: 'Volume',
+                    font: { size: 14, color: textColor }
+                },
                 side: 'right',
                 overlaying: 'y',
-                showgrid: false,
+                gridcolor: 'transparent',
+                linecolor: gridColor,
                 rangemode: 'nonnegative'
             },
             legend: {
                 orientation: 'h',
-                y: 1.1
+                y: 1.1,
+                x: 0.5,
+                xanchor: 'center',
+                font: { color: textColor }
             },
-            height: 500,
+            height: 550,
             margin: {
-                l: 50,
-                r: 50,
-                b: 50,
-                t: 50,
-                pad: 4
+                l: 60,
+                r: 60,
+                b: 80,
+                t: 80,
+                pad: 10
             },
             showlegend: true,
-            hovermode: 'closest'
+            hovermode: 'x unified',
+            hoverlabel: {
+                bgcolor: bgColor,
+                bordercolor: gridColor,
+                font: { color: textColor }
+            }
         };
         
-        // Add a shape to highlight recommendation
-        const recommendationColor = chartConfig.recommendation === 'BUY' ? '#27ae60' : 
-                                   (chartConfig.recommendation === 'SELL' ? '#c0392b' : '#f39c12');
-        
-        layout.shapes = [{
-            type: 'line',
-            x0: dates[dates.length - 1],
-            y0: prices[prices.length - 1],
-            x1: dates[dates.length - 1],
-            y1: prices[prices.length - 1] * 1.02,
-            line: {
-                color: recommendationColor,
-                width: 3,
-                dash: 'solid'
-            }
-        }];
-        
         // Add annotation for recommendation
-        layout.annotations = [{
-            x: dates[dates.length - 1],
-            y: prices[prices.length - 1] * 1.03,
-            xref: 'x',
-            yref: 'y',
-            text: chartConfig.recommendation,
-            showarrow: true,
-            arrowhead: 2,
-            arrowsize: 1,
-            arrowwidth: 2,
-            arrowcolor: recommendationColor,
-            font: {
-                color: recommendationColor,
-                size: 12,
-                weight: 'bold'
-            },
-            align: 'center',
-            bgcolor: 'rgba(255, 255, 255, 0.8)',
-            bordercolor: recommendationColor,
-            borderwidth: 2,
-            borderpad: 4,
-            opacity: 0.8
-        }];
+        if (dates && dates.length > 0 && prices && prices.length > 0) {
+            layout.annotations = [{
+                x: dates[dates.length - 1],
+                y: prices[prices.length - 1] * 1.03,
+                xref: 'x',
+                yref: 'y',
+                text: chartConfig.recommendation || '',
+                showarrow: true,
+                arrowhead: 2,
+                arrowsize: 1,
+                arrowwidth: 2,
+                arrowcolor: recommendationColor,
+                font: {
+                    color: recommendationColor,
+                    size: 14,
+                    family: 'Inter, sans-serif',
+                    weight: 'bold'
+                },
+                align: 'center',
+                bgcolor: bgColor,
+                bordercolor: recommendationColor,
+                borderwidth: 2,
+                borderpad: 6,
+                opacity: 0.9
+            }];
+        }
         
         // Plot chart
-        Plotly.newPlot('stockChart', traces, layout);
+        Plotly.newPlot('stockChart', traces, layout, {
+            responsive: true,
+            displayModeBar: true,
+            modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
+            displaylogo: false
+        });
+        
+        // Update chart on theme change
+        const observer = new MutationObserver(() => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const isDarkNow = currentTheme === 'dark';
+            if (isDarkNow !== isDark) {
+                // Recreate chart with new theme colors
+                setTimeout(() => createStockChart(chartConfig), 100);
+            }
+        });
+        
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme']
+        });
     }
+    
+    // === CSS ANIMATIONS ===
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 });
