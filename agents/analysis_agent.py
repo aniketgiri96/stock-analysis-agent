@@ -15,11 +15,23 @@ class AnalysisAgent(BaseAgent):
     def __init__(self):
         super().__init__(name="AnalysisAgent")
         self.system_prompt = """
-        You are a sophisticated financial analysis agent. Your task is to analyze stock market data
-        and provide insightful recommendations. Consider technical indicators, fundamental analysis,
-        recent news sentiment, and market trends. Be balanced in your analysis, highlighting both
-        potential risks and opportunities. Provide a clear buy, sell, or hold recommendation with
-        supporting evidence and reasoning.
+        You are a senior financial analyst with extensive experience in equity research and stock market analysis.
+        Your expertise includes technical analysis, fundamental analysis, quantitative methods, and market sentiment evaluation.
+        
+        Your analytical approach should:
+        - Be thorough, objective, and data-driven
+        - Consider multiple timeframes and perspectives
+        - Identify both bullish and bearish factors
+        - Assess risk-reward ratios appropriately
+        - Consider market context and sector dynamics
+        - Be transparent about data limitations and uncertainties
+        
+        When making recommendations:
+        - Base decisions on concrete evidence, not speculation
+        - Clearly explain the reasoning and assumptions
+        - Provide actionable insights for investors
+        - Maintain professional skepticism and caution when data is limited
+        - Use clear, structured language suitable for both novice and experienced investors
         """
     
     def process(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -179,55 +191,142 @@ class AnalysisAgent(BaseAgent):
                 
             # Prepare the prompt for the language model
             prompt = f"""
-            I need to analyze the following stock data for {symbol} and provide a buy, sell, or hold recommendation.
+            # Stock Analysis Request: {symbol}
             
+            Please conduct a comprehensive analysis of {symbol} based on the following data and provide a well-reasoned investment recommendation.
+            
+            ## COMPANY INFORMATION
             {company_desc}
             
+            ## TECHNICAL ANALYSIS
             {tech_summary}
             
+            ## FUNDAMENTAL ANALYSIS
             {fund_summary}
             
+            ## RECENT NEWS & SENTIMENT
             {news_summary}
             
+            ## PRICE PERFORMANCE
             {price_summary}
             
-            Based on the data above, provide a detailed analysis of {symbol} with the following:
-            1. A summary of key strengths and weaknesses
-            2. Evaluation of technical indicators
-            3. Assessment of fundamental factors
-            4. Analysis of recent news impact
-            5. Clear buy, sell, or hold recommendation with confidence level (high, medium, low)
-            6. Brief explanation of the reasoning behind the recommendation
+            ---
             
-            Format your recommendation prominently at the end as "RECOMMENDATION: [BUY/SELL/HOLD] (Confidence: [HIGH/MEDIUM/LOW])"
+            ## ANALYSIS REQUIREMENTS
+            
+            Please provide your analysis in the following structured format:
+            
+            ### 1. EXECUTIVE SUMMARY (2-3 sentences)
+            Provide a concise overview of the investment thesis for {symbol}, highlighting the most critical factors that drive your recommendation.
+            
+            ### 2. TECHNICAL ANALYSIS EVALUATION
+            - Interpret the moving average signals (MA20 and MA50): What do they indicate about price momentum and trend strength?
+            - Analyze the RSI reading: Is the stock overbought, oversold, or neutral? What does this suggest about potential price movements?
+            - Evaluate the price trend: Assess the sustainability and strength of the current trend
+            - Identify key support and resistance levels based on the price history
+            - Comment on trading volume patterns if observable
+            
+            ### 3. FUNDAMENTAL ANALYSIS ASSESSMENT
+            - Evaluate the P/E ratio in context: Compare to industry standards and historical averages. Is it reasonable, expensive, or cheap?
+            - Assess market capitalization: What does this imply about the company's size, growth stage, and risk profile?
+            - Analyze dividend yield (if applicable): Is it sustainable and attractive?
+            - Identify any red flags or positive fundamental signals
+            - Note any missing fundamental data that would be valuable for a complete assessment
+            
+            ### 4. NEWS & SENTIMENT ANALYSIS
+            - Assess the impact of recent news on the stock's outlook (positive, negative, or neutral)
+            - Evaluate whether news events are temporary or likely to have lasting effects
+            - Consider how market sentiment might affect short-term price movements
+            - Identify any significant news gaps or uncertainties
+            
+            ### 5. RISK ASSESSMENT
+            - Identify the primary risks associated with this investment
+            - Assess downside potential and upside potential
+            - Consider sector-specific risks and broader market conditions
+            - Evaluate data quality and any limitations in the available information
+            
+            ### 6. STRENGTHS & WEAKNESSES
+            **Key Strengths:**
+            - List 2-4 primary positive factors supporting the investment case
+            
+            **Key Weaknesses:**
+            - List 2-4 primary concerns or negative factors
+            
+            ### 7. INVESTMENT RECOMMENDATION
+            
+            Provide your final recommendation using EXACTLY this format:
+            
+            **RECOMMENDATION: [BUY/SELL/HOLD]**
+            **CONFIDENCE: [HIGH/MEDIUM/LOW]**
+            
+            **Reasoning:**
+            Provide 3-5 specific, evidence-based points explaining your recommendation. Be concrete and reference specific data points from the analysis above.
+            
+            **Confidence Level Justification:**
+            Explain why you assigned this confidence level. Consider factors such as:
+            - Data completeness and reliability
+            - Consistency of signals across different analysis methods
+            - Market volatility and uncertainty
+            - Time horizon appropriateness of the recommendation
+            
+            **Investment Timeframe:**
+            Indicate whether this recommendation is suitable for short-term (days/weeks), medium-term (months), or long-term (years) investors, and why.
+            
+            ---
+            
+            IMPORTANT FORMATTING NOTES:
+            - Use clear headings and bullet points for readability
+            - Be specific with numbers and percentages where available
+            - If any critical data is missing, explicitly state its absence and how it affects your analysis
+            - End your response with the recommendation in the exact format specified above
+            - Keep the total analysis professional yet accessible, aiming for approximately 400-600 words
             """
             
             # Get analysis from Ollama
             analysis = self._call_ollama(prompt, self.system_prompt)
             
-            # Extract recommendation
+            # Extract recommendation with improved parsing
             recommendation = "HOLD"  # Default
             confidence = "LOW"      # Default
             
-            # Try to extract recommendation from the analysis text
-            if "RECOMMENDATION:" in analysis:
-                rec_part = analysis.split("RECOMMENDATION:")[1].strip()
-                if "BUY" in rec_part[:20]:
-                    recommendation = "BUY"
-                elif "SELL" in rec_part[:20]:
-                    recommendation = "SELL"
-                elif "HOLD" in rec_part[:20]:
-                    recommendation = "HOLD"
+            # Try to extract recommendation from the analysis text (case-insensitive)
+            analysis_upper = analysis.upper()
+            
+            # Look for recommendation in various formats
+            rec_patterns = ["RECOMMENDATION:", "**RECOMMENDATION:**", "RECOMMENDATION"]
+            for pattern in rec_patterns:
+                if pattern.upper() in analysis_upper:
+                    # Find the position and extract text after it
+                    idx = analysis_upper.find(pattern.upper())
+                    rec_part = analysis[idx + len(pattern):idx + len(pattern) + 100].strip()
                     
-                # Extract confidence
-                if "Confidence:" in rec_part:
-                    conf_part = rec_part.split("Confidence:")[1].strip()
-                    if "HIGH" in conf_part[:10]:
+                    # Extract recommendation
+                    if "BUY" in rec_part[:30]:
+                        recommendation = "BUY"
+                        break
+                    elif "SELL" in rec_part[:30]:
+                        recommendation = "SELL"
+                        break
+                    elif "HOLD" in rec_part[:30]:
+                        recommendation = "HOLD"
+                        break
+            
+            # Extract confidence level
+            conf_patterns = ["CONFIDENCE:", "**CONFIDENCE:**", "CONFIDENCE"]
+            for pattern in conf_patterns:
+                if pattern.upper() in analysis_upper:
+                    idx = analysis_upper.find(pattern.upper())
+                    conf_part = analysis[idx + len(pattern):idx + len(pattern) + 50].strip()
+                    
+                    if "HIGH" in conf_part[:15]:
                         confidence = "HIGH"
-                    elif "MEDIUM" in conf_part[:10]:
+                        break
+                    elif "MEDIUM" in conf_part[:15]:
                         confidence = "MEDIUM"
-                    elif "LOW" in conf_part[:10]:
+                        break
+                    elif "LOW" in conf_part[:15]:
                         confidence = "LOW"
+                        break
             
             # Prepare chart data
             chart_data = []
