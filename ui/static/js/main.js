@@ -453,7 +453,7 @@ document.addEventListener('DOMContentLoaded', function() {
         stockChart.style.opacity = '0';
         
         requestAnimationFrame(() => {
-            stockChart.style.transition = 'opacity 0.5s ease';
+            stockChart.style.transition = 'opacity 0.3s ease';
             stockChart.style.opacity = '1';
         });
         
@@ -463,9 +463,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Get theme colors
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        const textColor = isDark ? '#f1f5f9' : '#0f172a';
-        const gridColor = isDark ? '#334155' : '#e2e8f0';
-        const bgColor = isDark ? '#1e293b' : '#ffffff';
+        const textColor = isDark ? '#f1f5f9' : '#1a1a1a';
+        const gridColor = isDark ? '#3a3a3a' : '#e2e8f0';
+        const bgColor = isDark ? '#2d2d2d' : '#ffffff';
         
         // Price trace
         const priceTrace = {
@@ -474,195 +474,126 @@ document.addEventListener('DOMContentLoaded', function() {
             type: 'scatter',
             mode: 'lines',
             name: 'Price',
-            line: {
-                color: '#6366f1',
-                width: 2.5,
-                shape: 'spline'
-            },
-            fill: 'tonexty',
-            fillcolor: 'rgba(99, 102, 241, 0.1)'
+            line: { color: '#3182ce', width: 2, shape: 'linear' },
+            hovertemplate: '%{y:.2f}<extra>Price</extra>'
         };
         
-        // Create array of traces
         const traces = [priceTrace];
         
-        // Add moving averages if available
         if (chartConfig.data.has_ma20) {
             traces.push({
                 x: dates,
                 y: chartConfig.data.ma20,
                 type: 'scatter',
                 mode: 'lines',
-                name: '20-Day MA',
-                line: {
-                    color: '#3b82f6',
-                    width: 1.5,
-                    dash: 'dash'
-                }
+                name: 'MA 20',
+                line: { color: '#4a5568', width: 1.5, dash: 'dot' },
+                hovertemplate: '%{y:.2f}<extra>MA 20</extra>'
             });
         }
-        
         if (chartConfig.data.has_ma50) {
             traces.push({
                 x: dates,
                 y: chartConfig.data.ma50,
                 type: 'scatter',
                 mode: 'lines',
-                name: '50-Day MA',
-                line: {
-                    color: '#f59e0b',
-                    width: 1.5,
-                    dash: 'dash'
-                }
+                name: 'MA 50',
+                line: { color: '#d69e2e', width: 1.5, dash: 'dot' },
+                hovertemplate: '%{y:.2f}<extra>MA 50</extra>'
             });
         }
         
-        // Volume trace for subplot
-        const volumeTrace = {
+        // Volume
+        traces.push({
             x: dates,
             y: volumes,
             type: 'bar',
             name: 'Volume',
-            marker: {
-                color: isDark ? '#475569' : '#cbd5e1',
-                opacity: 0.6
-            },
-            yaxis: 'y2'
-        };
+            marker: { color: isDark ? '#808080' : '#cbd5e1', opacity: 0.6 },
+            yaxis: 'y2',
+            hovertemplate: '%{y:,}<extra>Volume</extra>'
+        });
         
-        traces.push(volumeTrace);
-        
-        // Recommendation color
-        const recommendationColor = chartConfig.recommendation === 'BUY' ? '#10b981' : 
-                                   (chartConfig.recommendation === 'SELL' ? '#ef4444' : '#f59e0b');
-        
-        // Create layout
+        // Layout
         const layout = {
-            title: {
-                text: chartConfig.symbol + ' ' + (chartConfig.period || ''),
-                font: {
-                    size: 18,
-                    color: textColor,
-                    family: 'Inter, sans-serif'
-                },
-                x: 0.5,
-                xanchor: 'center'
-            },
+            autosize: true,
             paper_bgcolor: bgColor,
             plot_bgcolor: bgColor,
-            font: {
-                family: 'Inter, sans-serif',
-                color: textColor,
-                size: 12
-            },
+            font: { family: 'Inter, sans-serif', color: textColor, size: 12 },
+            margin: { l: 48, r: 32, b: 48, t: 24, pad: 4 },
             xaxis: {
-                title: {
-                    text: 'Date',
-                    font: { size: 14, color: textColor }
-                },
+                title: { text: 'Date', font: { size: 12, color: textColor } },
                 gridcolor: gridColor,
                 linecolor: gridColor,
-                rangeslider: {
-                    visible: true,
-                    thickness: 0.05,
-                    bgcolor: isDark ? '#334155' : '#f8fafc'
-                }
+                rangeslider: { visible: true, thickness: 0.06, bgcolor: isDark ? '#3a3a3a' : '#f5f7fa' }
             },
             yaxis: {
-                title: {
-                    text: 'Price (USD)',
-                    font: { size: 14, color: textColor }
-                },
-                side: 'left',
+                title: { text: 'Price', font: { size: 12, color: textColor } },
                 gridcolor: gridColor,
                 linecolor: gridColor,
                 zeroline: false
             },
             yaxis2: {
-                title: {
-                    text: 'Volume',
-                    font: { size: 14, color: textColor }
-                },
-                side: 'right',
+                title: { text: 'Volume', font: { size: 12, color: textColor } },
                 overlaying: 'y',
+                side: 'right',
                 gridcolor: 'transparent',
-                linecolor: gridColor,
                 rangemode: 'nonnegative'
             },
-            legend: {
-                orientation: 'h',
-                y: 1.1,
-                x: 0.5,
-                xanchor: 'center',
-                font: { color: textColor }
-            },
-            height: 550,
-            margin: {
-                l: 60,
-                r: 60,
-                b: 80,
-                t: 80,
-                pad: 10
-            },
-            showlegend: true,
+            legend: { orientation: 'h', y: 1.02, x: 0.5, xanchor: 'center' },
             hovermode: 'x unified',
-            hoverlabel: {
-                bgcolor: bgColor,
-                bordercolor: gridColor,
-                font: { color: textColor }
-            }
+            hoverlabel: { bgcolor: bgColor, bordercolor: gridColor, font: { color: textColor } }
         };
         
-        // Add annotation for recommendation
-        if (dates && dates.length > 0 && prices && prices.length > 0) {
+        // Recommendation annotation
+        if (dates && dates.length && prices && prices.length && chartConfig.recommendation) {
+            const recommendationColor = chartConfig.recommendation === 'BUY' ? '#38a169' : (chartConfig.recommendation === 'SELL' ? '#e53e3e' : '#d69e2e');
             layout.annotations = [{
                 x: dates[dates.length - 1],
-                y: prices[prices.length - 1] * 1.03,
-                xref: 'x',
-                yref: 'y',
-                text: chartConfig.recommendation || '',
-                showarrow: true,
-                arrowhead: 2,
-                arrowsize: 1,
-                arrowwidth: 2,
+                y: prices[prices.length - 1],
+                xref: 'x', yref: 'y', text: chartConfig.recommendation,
+                showarrow: true, arrowhead: 2, arrowsize: 1, arrowwidth: 1.5,
                 arrowcolor: recommendationColor,
-                font: {
-                    color: recommendationColor,
-                    size: 14,
-                    family: 'Inter, sans-serif',
-                    weight: 'bold'
-                },
-                align: 'center',
-                bgcolor: bgColor,
-                bordercolor: recommendationColor,
-                borderwidth: 2,
-                borderpad: 6,
-                opacity: 0.9
+                font: { color: recommendationColor, size: 12 },
+                bgcolor: bgColor, bordercolor: recommendationColor, borderwidth: 1, borderpad: 3, opacity: 0.9
             }];
         }
         
-        // Plot chart
-        Plotly.newPlot('stockChart', traces, layout, {
-            responsive: true,
-            displayModeBar: true,
-            modeBarButtonsToRemove: ['pan2d', 'lasso2d'],
-            displaylogo: false
-        });
+        // Render or update chart
+        if (stockChart.data && stockChart.data.length) {
+            Plotly.react(stockChart, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['pan2d','lasso2d'] });
+        } else {
+            Plotly.newPlot(stockChart, traces, layout, { responsive: true, displaylogo: false, modeBarButtonsToRemove: ['pan2d','lasso2d'] });
+        }
         
-        // Update chart on theme change
+        // Debounced resize
+        let resizeTimer;
+        const onResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => Plotly.Plots.resize(stockChart), 100);
+        };
+        window.addEventListener('resize', onResize);
+        
+        // Theme change: relayout only
         const observer = new MutationObserver(() => {
             const currentTheme = document.documentElement.getAttribute('data-theme');
-            const isDarkNow = currentTheme === 'dark';
-            if (isDarkNow !== isDark) {
-                // Recreate chart with new theme colors
-                setTimeout(() => createStockChart(chartConfig), 100);
-            }
+            const darkNow = currentTheme === 'dark';
+            const newText = darkNow ? '#f5f5f5' : '#1a1a1a';
+            const newGrid = darkNow ? '#3a3a3a' : '#e2e8f0';
+            const newBg = darkNow ? '#2d2d2d' : '#ffffff';
+            Plotly.relayout(stockChart, {
+                paper_bgcolor: newBg,
+                plot_bgcolor: newBg,
+                'xaxis.gridcolor': newGrid,
+                'xaxis.linecolor': newGrid,
+                'yaxis.gridcolor': newGrid,
+                'yaxis.linecolor': newGrid,
+                'yaxis2.linecolor': newGrid,
+                font: { family: 'Inter, sans-serif', color: newText, size: 12 },
+                hoverlabel: { bgcolor: newBg, bordercolor: newGrid }
+            });
         });
-        
-        observer.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['data-theme']
-        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     }
     
     // === CSS ANIMATIONS ===
