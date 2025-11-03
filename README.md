@@ -88,11 +88,6 @@ Contributions are welcome! Please open an issue to discuss changes or submit a p
 
 MIT License. See `LICENSE`.
 
-# Chain of Agents Stock Analysis System
-
-A modern stock analysis application powered by a chain of AI agents to collect data, perform analysis, and create visualizations.
-
-![Chain of Agents](images/Image-preview.png)
 
 ## Overview
 
