@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis AI - Modern Portfolio Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="theme-toggle-container">
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+            <i class="bi bi-moon-stars-fill"></i>
+        </button>
+    </div>
+    
+    <div class="container-fluid main-container">
+        <header class="header-modern">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1 class="main-title">AI Stock Analysis</h1>
+                        <p class="subtitle">Intelligent Market Insights Powered by Deepseek R1</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card-modern card-input">
+                    <div class="card-header-modern">
+                        <div class="card-header-content">
+                            <i class="bi bi-search"></i>
+                            <h5 class="card-title-modern">Stock Analysis</h5>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
+                        <form id="stockForm">
+                            <div class="input-group-modern mb-4">
+                                <label for="stockSymbol" class="input-label">
+                                    <i class="bi bi-tag-fill"></i>
+                                    Stock Symbol
+                                </label>
+                                <div class="input-wrapper">
+                                    <input type="text" class="input-modern" id="stockSymbol" placeholder="AAPL, MSFT, GOOG..." required>
+                                    <div class="input-focus-line"></div>
+                                </div>
+                            </div>
+                            <div class="input-group-modern mb-4">
+                                <label for="timePeriod" class="input-label">
+                                    <i class="bi bi-calendar-range"></i>
+                                    Time Period
+                                </label>
+                                <div class="select-wrapper">
+                                    <select class="select-modern" id="timePeriod">
+                                        {% for period in time_periods %}
+                                        <option value="{{ period.value }}">{{ period.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <i class="bi bi-chevron-down select-arrow"></i>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-modern btn-primary-modern w-100" id="analyzeBtn">
+                                <span class="btn-content">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                    <span>Analyze Stock</span>
+                                </span>
+                                <span class="btn-loader">
+                                    <span class="spinner"></span>
+                                </span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card-modern card-pipeline">
+                    <div class="card-header-modern">
+                        <div class="card-header-content">
+                            <i class="bi bi-diagram-3-fill"></i>
+                            <h5 class="card-title-modern">Agent Pipeline</h5>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
+                        <div id="pipelineStatus" class="pipeline-list">
+                            <div class="agent-status-modern" id="agent1Status" data-status="idle">
+                                <div class="agent-header">
+                                    <div class="agent-icon-wrapper">
+                                        <div class="agent-icon data-agent">
+                                            <i class="bi bi-database-fill"></i>
+                                        </div>
+                                        <div class="agent-connector"></div>
+                                    </div>
+                                    <div class="agent-info">
+                                        <h6 class="agent-name">Data Collector</h6>
+                                        <div class="agent-status-badge">
+                                            <span class="status-dot"></span>
+                                            <span class="status-label">Idle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="progress-modern">
+                                    <div class="progress-bar-modern" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="agent-status-modern" id="agent2Status" data-status="idle">
+                                <div class="agent-header">
+                                    <div class="agent-icon-wrapper">
+                                        <div class="agent-icon analysis-agent">
+                                            <i class="bi bi-cpu-fill"></i>
+                                        </div>
+                                        <div class="agent-connector"></div>
+                                    </div>
+                                    <div class="agent-info">
+                                        <h6 class="agent-name">Analysis Engine</h6>
+                                        <div class="agent-status-badge">
+                                            <span class="status-dot"></span>
+                                            <span class="status-label">Idle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="progress-modern">
+                                    <div class="progress-bar-modern" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="agent-status-modern" id="agent3Status" data-status="idle">
+                                <div class="agent-header">
+                                    <div class="agent-icon-wrapper">
+                                        <div class="agent-icon viz-agent">
+                                            <i class="bi bi-bar-chart-fill"></i>
+                                        </div>
+                                    </div>
+                                    <div class="agent-info">
+                                        <h6 class="agent-name">Visualization</h6>
+                                        <div class="agent-status-badge">
+                                            <span class="status-dot"></span>
+                                            <span class="status-label">Idle</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="progress-modern">
+                                    <div class="progress-bar-modern" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-modern card-recommendation" id="recommendationCard" style="display: none;">
+                    <div class="card-header-modern">
+                        <div class="card-header-content">
+                            <i class="bi bi-star-fill"></i>
+                            <h5 class="card-title-modern">Recommendation</h5>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
+                        <div id="recommendationContent"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="card-modern card-chart">
+                    <div class="card-header-modern">
+                        <div class="card-header-content">
+                            <i class="bi bi-graph-up"></i>
+                            <h5 class="card-title-modern" id="chartTitle">Stock Chart</h5>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
+                        <div id="loadingChart" class="loading-state">
+                            <div class="loading-content">
+                                <div class="loading-icon">
+                                    <i class="bi bi-graph-up-arrow"></i>
+                                </div>
+                                <p class="loading-text">Enter a stock symbol and click "Analyze Stock" to generate insights</p>
+                            </div>
+                        </div>
+                        <div id="stockChart" class="chart-container" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="card-modern card-analysis" id="analysisCard" style="display: none;">
+                    <div class="card-header-modern">
+                        <div class="card-header-content">
+                            <i class="bi bi-file-text-fill"></i>
+                            <h5 class="card-title-modern">Market Analysis</h5>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
+                        <div id="analysisContent" class="analysis-content"></div>
+                    </div>
+                </div>
+
+                <div class="card-modern card-insights" id="insightsCard" style="display: none;">
+                    <div class="card-header-modern">
+                        <div class="card-header-content">
+                            <i class="bi bi-lightbulb-fill"></i>
+                            <h5 class="card-title-modern">Visualization Insights</h5>
+                        </div>
+                    </div>
+                    <div class="card-body-modern">
+                        <div id="insightsContent" class="insights-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
